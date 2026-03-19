@@ -1,0 +1,295 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LENS — Visual Feed</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="style.css"/>
+</head>
+<body>
+
+  <!-- Noise texture overlay -->
+  <div class="noise-overlay"></div>
+
+  <!-- Toast container -->
+  <div id="toast-container"></div>
+
+  <!-- ═══════════ HEADER ═══════════ -->
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo">
+        <svg class="logo-mark" viewBox="0 0 36 36" fill="none">
+          <circle cx="18" cy="18" r="17" stroke="url(#lg)" stroke-width="2"/>
+          <path d="M10 18 Q18 8 26 18 Q18 28 10 18Z" fill="url(#lg2)"/>
+          <defs>
+            <linearGradient id="lg" x1="0" y1="0" x2="36" y2="36">
+              <stop offset="0%" stop-color="#a89fd8"/>
+              <stop offset="100%" stop-color="#7b6fc4"/>
+            </linearGradient>
+            <linearGradient id="lg2" x1="0" y1="0" x2="36" y2="36">
+              <stop offset="0%" stop-color="#c4b8f0"/>
+              <stop offset="100%" stop-color="#7b6fc4"/>
+            </linearGradient>
+          </defs>
+        </svg>
+        <span class="logo-text">LENS</span>
+      </div>
+      <nav class="header-nav">
+        <div id="admin-badge" class="admin-badge hidden">
+          <span class="admin-dot"></span><span>Admin</span>
+        </div>
+        <button id="admin-login-btn" class="btn btn-ghost">Sign In</button>
+        <button id="admin-logout-btn" class="btn btn-ghost hidden">Logout</button>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ═══════════ ADMIN UPLOAD PANEL ═══════════ -->
+  <section id="admin-panel" class="admin-panel hidden">
+    <div class="admin-panel-inner">
+      <h2 class="panel-title">Upload New Post</h2>
+      <div class="upload-tabs">
+        <button class="upload-tab active" data-tab="file">📁 Upload File</button>
+        <button class="upload-tab" data-tab="url">🔗 Image URL</button>
+        <button class="upload-tab" data-tab="instagram">📷 Instagram</button>
+      </div>
+
+      <!-- File upload tab -->
+      <div class="tab-content active" id="tab-file">
+        <div class="dropzone" id="dropzone">
+          <input type="file" id="file-input" accept="image/*" hidden/>
+          <div class="dropzone-inner">
+            <svg viewBox="0 0 48 48" fill="none" class="upload-icon">
+              <path d="M24 8v24M12 20l12-12 12 12" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M8 36h32" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"/>
+            </svg>
+            <p class="dropzone-text">Drag photo here or <span class="browse-link" id="browse-btn">browse</span></p>
+            <p class="dropzone-hint">JPG, PNG, WEBP, GIF — from phone or laptop</p>
+          </div>
+          <div class="dropzone-preview hidden" id="dropzone-preview">
+            <img id="preview-img" src="" alt="preview"/>
+            <button class="remove-preview" id="remove-preview">✕</button>
+          </div>
+        </div>
+        <div class="field-error" id="file-error"></div>
+      </div>
+
+      <!-- URL tab -->
+      <div class="tab-content" id="tab-url">
+        <div class="form-group">
+          <label>Direct Image URL</label>
+          <input id="url-input" type="url" placeholder="https://example.com/photo.jpg" class="glass-input"/>
+          <span class="field-hint">Must end in .jpg .jpeg .png .gif .webp</span>
+          <div class="field-error" id="url-error"></div>
+        </div>
+      </div>
+
+      <!-- Instagram tab -->
+      <div class="tab-content" id="tab-instagram">
+        <div class="form-group">
+          <label>Instagram Post URL</label>
+          <input id="insta-url-input" type="url" placeholder="https://www.instagram.com/p/ABC123/" class="glass-input"/>
+          <div class="field-error" id="insta-url-error"></div>
+        </div>
+        <div class="form-group">
+          <label>Thumbnail Image URL <span class="required-tag">Required</span></label>
+          <input id="insta-thumb-input" type="url" placeholder="https://i.imgur.com/yourphoto.jpg" class="glass-input"/>
+          <span class="field-hint">Upload photo to imgur.com → copy direct link</span>
+          <div class="field-error" id="insta-thumb-error"></div>
+        </div>
+      </div>
+
+      <!-- Caption (shared) -->
+      <div class="form-group" style="margin-top:16px">
+        <label>Caption <span class="optional-tag">optional</span></label>
+        <input id="caption-input" type="text" maxlength="150" placeholder="Say something about this post…" class="glass-input"/>
+        <span class="char-count"><span id="caption-count">0</span> / 150</span>
+      </div>
+
+      <button id="publish-btn" class="btn btn-primary publish-btn">
+        <span class="btn-text">Publish Post</span>
+        <span class="btn-loader hidden"></span>
+      </button>
+    </div>
+  </section>
+
+  <!-- ═══════════ MAIN — CAROUSEL + TICKER ═══════════ -->
+  <main class="main-stage">
+
+    <!-- Skeleton -->
+    <div id="skeleton-stage" class="skeleton-stage">
+      <div class="skeleton-card"></div>
+      <div class="skeleton-card side"></div>
+      <div class="skeleton-card side right"></div>
+    </div>
+
+    <!-- Carousel -->
+    <div id="carousel-stage" class="carousel-stage hidden">
+      <button class="carousel-arrow left" id="arrow-left" aria-label="Previous">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+      <div class="carousel-track-wrap">
+        <div class="carousel-track" id="carousel-track"></div>
+      </div>
+      <button class="carousel-arrow right" id="arrow-right" aria-label="Next">
+        <svg viewBox="0 0 24 24" fill="none"><path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+
+    <!-- Dots -->
+    <div class="carousel-dots" id="carousel-dots"></div>
+
+    <!-- Empty state -->
+    <div id="empty-state" class="empty-state hidden">
+      <div class="empty-glyph">◈</div>
+      <p>No posts yet. Be the first.</p>
+    </div>
+
+    <!-- ═══ BOTTOM PLAYER BAR (comment ticker) ═══ -->
+    <div class="player-bar" id="player-bar">
+      <div class="player-left">
+        <div class="player-thumb-wrap">
+          <img id="player-thumb" src="" alt="" class="player-thumb"/>
+          <div class="player-thumb-placeholder">◈</div>
+        </div>
+        <div class="player-info">
+          <span class="player-title" id="player-title">No post selected</span>
+          <span class="player-sub" id="player-sub">—</span>
+        </div>
+      </div>
+      <div class="player-center">
+        <div class="comment-ticker-wrap">
+          <div class="comment-ticker" id="comment-ticker">
+            <span class="ticker-item">Swipe through posts above ↑</span>
+          </div>
+        </div>
+      </div>
+      <div class="player-right">
+        <button class="player-like-btn" id="player-like-btn" aria-label="Like">
+          <svg class="heart-icon" viewBox="0 0 24 24" fill="none">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
+          <span id="player-like-count">0</span>
+        </button>
+        <button class="player-comment-btn" id="player-comment-btn" aria-label="Comment">
+          <svg viewBox="0 0 24 24" fill="none">
+            <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+          </svg>
+          <span id="player-comment-count">0</span>
+        </button>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- ═══════════ COMMENT DRAWER ═══════════ -->
+  <div id="comment-drawer" class="comment-drawer hidden">
+    <div class="drawer-inner">
+      <div class="drawer-header">
+        <h3 class="drawer-title">Comments</h3>
+        <button class="drawer-close" id="drawer-close">✕</button>
+      </div>
+      <div class="drawer-comments" id="drawer-comments-list"></div>
+      <div class="drawer-form">
+        <input type="text" id="drawer-name" placeholder="Your name" maxlength="30" class="glass-input"/>
+        <div class="field-error" id="drawer-name-error"></div>
+        <textarea id="drawer-text" placeholder="Write a comment…" maxlength="200" rows="2" class="glass-input"></textarea>
+        <div class="field-error" id="drawer-text-error"></div>
+        <button id="drawer-submit" class="btn btn-primary">
+          <span class="btn-text">Post Comment</span>
+          <span class="btn-loader hidden"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+  <div class="drawer-backdrop hidden" id="drawer-backdrop"></div>
+
+  <!-- ═══════════ AUTH MODAL ═══════════ -->
+  <div id="auth-modal" class="modal-overlay hidden">
+    <div class="modal-glass auth-modal-glass">
+      <button class="modal-close" id="auth-close">✕</button>
+      <div class="auth-logo">
+        <svg viewBox="0 0 36 36" fill="none" width="40" height="40">
+          <circle cx="18" cy="18" r="17" stroke="url(#alg)" stroke-width="2"/>
+          <path d="M10 18 Q18 8 26 18 Q18 28 10 18Z" fill="url(#alg2)"/>
+          <defs>
+            <linearGradient id="alg" x1="0" y1="0" x2="36" y2="36"><stop offset="0%" stop-color="#a89fd8"/><stop offset="100%" stop-color="#7b6fc4"/></linearGradient>
+            <linearGradient id="alg2" x1="0" y1="0" x2="36" y2="36"><stop offset="0%" stop-color="#c4b8f0"/><stop offset="100%" stop-color="#7b6fc4"/></linearGradient>
+          </defs>
+        </svg>
+      </div>
+      <h2 class="auth-title">Admin Access</h2>
+      <p class="auth-sub">Sign in to manage your feed</p>
+      <div class="auth-form">
+        <div class="underline-field">
+          <input id="auth-email" type="email" placeholder="Email address" autocomplete="email"/>
+          <div class="underline-bar"></div>
+        </div>
+        <div class="underline-field">
+          <input id="auth-password" type="password" placeholder="Password" autocomplete="current-password"/>
+          <div class="underline-bar"></div>
+        </div>
+        <div class="field-error" id="auth-error"></div>
+        <button id="auth-submit" class="btn btn-primary shimmer-btn">
+          <span class="btn-text">Sign In</span>
+          <span class="btn-loader hidden"></span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ CONFIRM DELETE MODAL ═══════════ -->
+  <div id="confirm-modal" class="modal-overlay hidden">
+    <div class="modal-glass confirm-glass">
+      <div class="confirm-thumb-wrap">
+        <img id="confirm-thumb" src="" alt="" class="confirm-thumb"/>
+      </div>
+      <h3 class="confirm-title">Delete this post?</h3>
+      <p class="confirm-sub">This removes the post and all its comments. Cannot be undone.</p>
+      <div class="confirm-btns">
+        <button id="confirm-cancel" class="btn btn-ghost wiggle-target">Keep it</button>
+        <button id="confirm-delete" class="btn btn-danger-wipe">
+          <span class="wipe-fill"></span>
+          <span class="btn-label">Delete</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════ IMAGE FULLSCREEN MODAL ═══════════ -->
+  <div id="image-modal" class="modal-overlay hidden">
+    <div class="modal-glass image-modal-glass">
+      <button class="modal-close" id="image-modal-close">✕</button>
+      <img id="fullscreen-img" src="" alt="" class="fullscreen-img"/>
+      <p id="fullscreen-caption" class="fullscreen-caption"></p>
+    </div>
+  </div>
+
+  <!-- CARD TEMPLATE -->
+  <template id="card-tpl">
+    <div class="carousel-card" data-id="">
+      <div class="card-img-wrap">
+        <img class="card-img" src="" alt="" loading="lazy"/>
+        <div class="card-insta-badge hidden">
+          <svg viewBox="0 0 24 24" fill="none" width="16" height="16">
+            <rect x="2" y="2" width="20" height="20" rx="5" stroke="white" stroke-width="2"/>
+            <circle cx="12" cy="12" r="4" stroke="white" stroke-width="2"/>
+            <circle cx="17.5" cy="6.5" r="1.5" fill="white"/>
+          </svg>
+          Instagram
+        </div>
+        <button class="card-delete-btn admin-only hidden">Delete</button>
+      </div>
+      <div class="card-info">
+        <p class="card-caption"></p>
+        <span class="card-time"></span>
+      </div>
+    </div>
+  </template>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
