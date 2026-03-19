@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>LENS — Visual Feed</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=DM+Sans:opsz,wght@9..40,300;9..40,400;9..40,500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ═══════════════════════════════ TOAST ═══════════════════════════════ -->
+  <div id="toast-container" aria-live="polite"></div>
+
+  <!-- ══════════════════════════════ HEADER ══════════════════════════════ -->
+  <header class="site-header">
+    <div class="header-inner">
+      <a class="logo" href="#">
+        <span class="logo-icon">◈</span>
+        <span class="logo-text">LENS</span>
+      </a>
+      <nav class="header-nav">
+        <button id="admin-login-btn" class="btn btn-ghost">Admin Login</button>
+        <button id="admin-logout-btn" class="btn btn-ghost hidden">Logout</button>
+        <div id="admin-badge" class="admin-badge hidden">
+          <span class="admin-dot"></span>Admin
+        </div>
+      </nav>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════ ADMIN PANEL ════════════════════════════ -->
+  <section id="admin-panel" class="admin-panel hidden">
+    <div class="admin-panel-inner">
+      <h2 class="admin-panel-title">Post New Image</h2>
+      <div class="admin-form">
+        <div class="form-group">
+          <label for="img-url-input">Image URL</label>
+          <input id="img-url-input" type="url" placeholder="https://example.com/photo.jpg" autocomplete="off" />
+          <span class="field-error" id="url-error"></span>
+        </div>
+        <div class="form-group">
+          <label for="img-caption-input">Caption <span class="optional">(optional)</span></label>
+          <input id="img-caption-input" type="text" placeholder="Write something..." maxlength="150" autocomplete="off" />
+          <span class="char-count" id="caption-count">0 / 150</span>
+        </div>
+        <button id="post-image-btn" class="btn btn-primary">
+          <span class="btn-text">Publish Post</span>
+          <span class="btn-loader hidden"></span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════════════════════════════ FEED ════════════════════════════════ -->
+  <main class="feed-container">
+    <div id="skeleton-grid" class="image-grid">
+      <div class="card skeleton"></div>
+      <div class="card skeleton"></div>
+      <div class="card skeleton"></div>
+      <div class="card skeleton"></div>
+      <div class="card skeleton"></div>
+      <div class="card skeleton"></div>
+    </div>
+    <div id="image-grid" class="image-grid hidden"></div>
+    <div id="empty-state" class="empty-state hidden">
+      <div class="empty-icon">◈</div>
+      <p>No posts yet. Check back soon.</p>
+    </div>
+    <div id="load-more-container" class="load-more-container hidden">
+      <button id="load-more-btn" class="btn btn-outline">Load More</button>
+    </div>
+  </main>
+
+  <!-- ══════════════════════════ AUTH MODAL ══════════════════════════════ -->
+  <div id="auth-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="Admin Login">
+    <div class="modal-box auth-modal-box">
+      <button class="modal-close" id="auth-modal-close" aria-label="Close">✕</button>
+      <div class="auth-header">
+        <span class="logo-icon large">◈</span>
+        <h2>Admin Access</h2>
+        <p>Sign in to manage this feed</p>
+      </div>
+      <div class="form-group">
+        <label for="auth-email">Email</label>
+        <input id="auth-email" type="email" placeholder="admin@example.com" autocomplete="email" />
+      </div>
+      <div class="form-group">
+        <label for="auth-password">Password</label>
+        <input id="auth-password" type="password" placeholder="••••••••" autocomplete="current-password" />
+        <span class="field-error" id="auth-error"></span>
+      </div>
+      <button id="auth-submit-btn" class="btn btn-primary full-width">
+        <span class="btn-text">Sign In</span>
+        <span class="btn-loader hidden"></span>
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════════ IMAGE MODAL ═════════════════════════════ -->
+  <div id="image-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-label="Image view">
+    <div class="modal-box image-modal-box">
+      <button class="modal-close" id="image-modal-close" aria-label="Close">✕</button>
+      <div class="image-modal-inner">
+        <div class="image-modal-media">
+          <img id="modal-img" src="" alt="" loading="lazy" />
+        </div>
+        <div class="image-modal-side">
+          <p id="modal-caption" class="modal-caption"></p>
+          <p id="modal-time" class="modal-time"></p>
+          <div class="modal-likes">
+            <button id="modal-like-btn" class="like-btn" aria-label="Like">
+              <svg class="heart-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+              </svg>
+              <span id="modal-like-count">0</span>
+            </button>
+          </div>
+          <div class="modal-comments-section">
+            <h3 class="comments-heading">Comments</h3>
+            <div id="modal-comments-list" class="comments-list"></div>
+            <div class="comment-form">
+              <div class="form-group">
+                <input id="modal-comment-name" type="text" placeholder="Your name" maxlength="30" autocomplete="name" />
+                <span class="field-error" id="modal-name-error"></span>
+              </div>
+              <div class="form-group">
+                <textarea id="modal-comment-text" placeholder="Add a comment…" maxlength="200" rows="2"></textarea>
+                <span class="field-error" id="modal-text-error"></span>
+              </div>
+              <button id="modal-comment-submit" class="btn btn-primary">
+                <span class="btn-text">Post</span>
+                <span class="btn-loader hidden"></span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══════════════════════════ CONFIRM MODAL ═══════════════════════════ -->
+  <div id="confirm-modal" class="modal-overlay hidden" role="dialog" aria-modal="true">
+    <div class="modal-box confirm-modal-box">
+      <h3 id="confirm-title">Are you sure?</h3>
+      <p id="confirm-message">This action cannot be undone.</p>
+      <div class="confirm-actions">
+        <button id="confirm-cancel-btn" class="btn btn-ghost">Cancel</button>
+        <button id="confirm-ok-btn" class="btn btn-danger">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ═══════════════════════ CARD TEMPLATE ══════════════════════════════ -->
+  <template id="card-template">
+    <article class="card" data-id="">
+      <div class="card-img-wrap">
+        <img class="card-img" src="" alt="" loading="lazy" />
+        <div class="card-img-overlay"></div>
+        <button class="card-delete-btn admin-only hidden" aria-label="Delete post">
+          <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <polyline points="3 6 5 6 21 6"></polyline>
+            <path d="M19 6l-1 14a2 2 0 01-2 2H8a2 2 0 01-2-2L5 6"></path>
+            <path d="M10 11v6M14 11v6"></path>
+            <path d="M9 6V4h6v2"></path>
+          </svg>
+        </button>
+      </div>
+      <div class="card-body">
+        <p class="card-caption"></p>
+        <div class="card-meta">
+          <button class="like-btn card-like-btn" aria-label="Like">
+            <svg class="heart-icon" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+            </svg>
+            <span class="like-count">0</span>
+          </button>
+          <span class="card-time"></span>
+          <button class="comment-toggle-btn">
+            <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M21 15a2 2 0 01-2 2H7l-4 4V5a2 2 0 012-2h14a2 2 0 012 2z"></path>
+            </svg>
+            <span class="comment-count">0</span>
+          </button>
+        </div>
+        <div class="comments-section collapsed">
+          <div class="comments-list"></div>
+          <div class="comment-form">
+            <div class="form-row">
+              <input type="text" class="comment-name-input" placeholder="Name" maxlength="30" />
+            </div>
+            <div class="form-row">
+              <textarea class="comment-text-input" placeholder="Add a comment…" maxlength="200" rows="2"></textarea>
+            </div>
+            <span class="field-error comment-error"></span>
+            <button class="btn btn-sm comment-submit-btn">Post Comment</button>
+          </div>
+        </div>
+      </div>
+    </article>
+  </template>
+
+  <!-- Firebase SDK -->
+  <script type="module" src="app.js"></script>
+</body>
+</html>
